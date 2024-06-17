@@ -1,19 +1,19 @@
 #include "Serial.h"
+#include "constants.h"
 
 const int MAX_DATA_LENGTH = 10; // Kích thước tối đa của dữ liệu nhận được
 
-uint8_t angle = 0;
-
-void ReceiveSerial()
+bool ReceiveSerial()
 {
+    float nums[3];
     if (Serial.available() > 0)
     {
+        digitalWrite(Led_Status_SERIAL,HIGH);
         char input[50] = "0 0 0";
         // Read value until \n
         Serial.readBytesUntil('\n', input, sizeof(input));
         // Take the first token
         char *token = strtok(input, " ");
-        uint16_t nums[3];
         int index = 0;
 
         while (token != NULL && index < 3)
@@ -22,16 +22,11 @@ void ReceiveSerial()
             token = strtok(NULL, " ");
             index++;
         }
-        Serial.print(nums[0]);
-        Serial.print(nums[1]);
-        Serial.print(nums[2]);
-        if (nums[0] == 1)
-        {
-            digitalWrite(13, HIGH);
-        }
-        if (nums[1] == 1)
-        {
-            digitalWrite(13, LOW);
-        }
     }
+    float PositionX = nums[2];
+    float PositionY = nums[1];
+    if ((PositionX >= MinX) && (PositionX <= MaxX) && (PositionY <= MaxY) && (PositionY <= MaxY))
+        return true;
+    else
+        return false;
 }

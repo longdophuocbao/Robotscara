@@ -2,6 +2,8 @@
 #ifndef SERIAL_H
 #define SERIAL_H
 
-extern uint8_t angle;
-void ReceiveSerial();
+extern float PositionX;
+extern float PositionY;
+bool ReceiveSerial();
+
 #endif

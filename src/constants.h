@@ -14,6 +14,9 @@
 
 #define Limit_1 8   // pin limit switch Motor 1
 #define Limit_2 9   // pin limit switch Motor 2
+#define B_Start 10
+#define Led_Status_SERIAL 11
+#define Knift 12
 
 #define Motor_1 0x141   //ID motor 1
 #define Motor_2 0x142   //ID motor 2
@@ -42,6 +45,12 @@
 // #define Limit_Rad_1_1 3;
 // #define Limit_Rad_2_0 -1.5 ;
 // #define Limit_Rad_2_1 2.8;
+
+#define MinX 100
+#define MaxX 600
+#define MinY -400
+#define MaxY 200
+
 
 #define COUNTS_PER_REV 1296000 
 #define GEAR_RATIO (48.0 / 18.0) 

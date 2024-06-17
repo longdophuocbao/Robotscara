@@ -8,20 +8,12 @@
 #include "constants.h"
 #include "math.h"
 #include "jointTask.h"
+#include "Task.h"
 
-float V[6][3] = {{0, 0, 0},
-                 {0, 0, 0},
-                 {0, 0, 0},
-                 {0, 0, 0},
-                 {0, 0, 0},
-                 {0, 0, 0}};
-// Acceleration
-float AC[6][3] = {{0, 0, 0},
-                  {0, 0, 0},
-                  {0, 0, 0},
-                  {0, 0, 0},
-                  {0, 0, 0},
-                  {0, 0, 0}};
+
+
+
+
 
 float theta1 = 0;
 float theta2 = 0;
@@ -57,11 +49,25 @@ float ad_Z = 0;
 //float T[6] = {0, 2, 3, 4, 20, 22};
 float T[6] = {0, 2, 3, 4, 6, 22};
 
-float start[3] = {760, 0, 0};                 //0
-float temp_taget_Bana[3] = {400, -400, 0};     //1
-float taget_Bana[3] = {400, 300, 0};          //2
+float V[6][3] = {{0, 0, 0},
+                 {0, 0, 0},
+                 {0, 0, 0},
+                 {0, 0, 0},
+                 {0, 0, 0},
+                 {0, 0, 0}};
+// Acceleration
+float AC[6][3] = {{0, 0, 0},
+                  {0, 0, 0},
+                  {0, 0, 0},
+                  {0, 0, 0},
+                  {0, 0, 0},
+                  {0, 0, 0}};
 
-float tranfer[3] = {350, -100, 0};               //3
+float start[3] = {120, -40, 0};                 //0
+float temp_taget_Bana[3] = {PositionX,PositionY + 100.0 , 0};     //1
+float taget_Bana[3] = {PositionX, PositionY, 0};          //2
+
+float tranfer[3] = {PositionX,PositionY - 100.0 , 0};              //3
 
 float temp_taget_Car[3] = {300, -100, 0};        //4
 float taget_Car[3] = {650, 0, 0};             //5
@@ -91,7 +97,7 @@ float a[6][1];
 float px2 = 0;
 float py2 = 0;
 
-bool isRunning = true;
+bool isRunning = false;
 float period_t = period_time;
 uint32_t periodTime = (uint32_t)(period_t * 1000000.0);
 
@@ -198,12 +204,26 @@ void loop()
     Serial.println(periodTime);
     Serial.println("Finish");
   }
+  if ((ReceiveSerial() == true) && (digitalRead(B_Start)==0) && (isRunning==false))
+  {
+    digitalWrite(Led_Status_SERIAL,LOW);
+    isRunning=true;
+  }
 
   if (isRunning == true)
   {
     if (t >= T[currentStep + 1])
     {
       currentStep++;
+      if(currentStep == 1)
+      {
+        SetKnift("ON");
+        delay(100);
+      }
+      else if(currentStep == 2)
+      {
+        SetKnift("OFF");
+      }
     }
     if (currentStep >= 3)
     {
@@ -211,6 +231,7 @@ void loop()
       Serial.println("FINISHED");
       return;
     }
+    
 
     Serial.print("Step: ");
     Serial.print(currentStep);
@@ -446,6 +467,7 @@ void loop()
     delayMicroseconds(periodTime);
     t += period_t;
     previousPulse_2 = currentPulse_2;
+    
   }
 }
 
