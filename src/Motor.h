@@ -1,4 +1,8 @@
 #include <Arduino.h>
+#include <SPI.h>
+#include <mcp2515.h>
+#include "constants.h"
+
 #ifndef MOTOR_H
 #define MOTOR_H
 extern int32_t Offset_1;
@@ -10,6 +14,7 @@ extern int8_t Reverse_2;
 void InitCan();
 unsigned long GetEconder(uint16_t _Motor);
 int32_t TransferAngle2Pulse(uint16_t Motor,float angle_Rad);
+float TransferPulse2Angle(uint16_t Motor, int32_t pulse);
 void Move(uint16_t Motor, uint16_t speed, int32_t pulse);
 void Move_Rad(uint16_t _Motor, uint16_t _Speed, double _Angle);
 void Move_Speed(uint16_t _Motor, int32_t _Speed);

@@ -16,7 +16,7 @@
 #define Limit_2 9   // pin limit switch Motor 2
 #define B_Start 10
 #define Led_Status_SERIAL 11
-#define Knift 12
+#define Knift 7
 
 #define Motor_1 0x141   //ID motor 1
 #define Motor_2 0x142   //ID motor 2
@@ -50,6 +50,9 @@
 #define MaxX 600
 #define MinY -400
 #define MaxY 200
+
+#define L1 380
+#define L2 380
 
 
 #define COUNTS_PER_REV 1296000 

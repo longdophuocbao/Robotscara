@@ -1,9 +1,7 @@
 #include "Motor.h"
 // #include <Serial_CAN_Module.h>
 // #include <SoftwareSerial.h>
-#include <SPI.h>
-#include <mcp2515.h>
-#include "constants.h"
+
 struct can_frame canSent;
 struct can_frame canRecei;
 
@@ -78,6 +76,18 @@ int32_t TransferAngle2Pulse(uint16_t Motor, float angle_Rad = 0)
     else
     {
         return ((int32_t)(angle_Rad * 504202.86) + abs(Offset_2) - (int32_t)1301427) * Reverse_2;
+    }
+}
+
+float TransferPulse2Angle(uint16_t Motor, int32_t pulse)
+{
+    if (Motor == Motor_1)
+    {
+        return (float)((pulse / Reverse_1) - Offset_1 - (int32_t)772052) / 550039.48;
+    }
+    else
+    {
+        return (float)((pulse / Reverse_2) + abs(Offset_2) + (int32_t)1301427) / 504202.86;
     }
 }
 
@@ -213,8 +223,8 @@ void GotoHOME_1()
     const uint16_t initialSpeed = 2000;
     const uint16_t initialStep = 1000;
     const uint16_t initialDelay = (uint16_t)((((float)initialStep) / ((float)initialSpeed)) * 10000.0);
-    Serial.print("initialDelay: ");
-    Serial.println(initialDelay);
+    // Serial.print("initialDelay: ");
+    // Serial.println(initialDelay);
     int32_t temp = 0;
 
     while (digitalRead(Limit_1) != 0)

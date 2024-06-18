@@ -5,14 +5,12 @@
 #include "Serial.h"
 #include "Motor.h"
 #include "InverseKinematic.h"
-#include "constants.h"
+#include "Constants.h"
 #include "math.h"
 #include "jointTask.h"
 #include "Task.h"
-
-
-
-
+//#include "Ibus.h"
+//#include "BaseMode.h"
 
 
 float theta1 = 0;
@@ -22,8 +20,8 @@ float theta3 = 0;
 float theta1_P;
 float theta2_P;
 
-const float L1 = 380;
-const float L2 = 380;
+float _L1 = L1;
+float _L2 = L2;
 const float L3 = 0.0;
 
 float t = 0;
@@ -47,7 +45,7 @@ float vd_Z = 0;
 float ad_Z = 0;
 
 //float T[6] = {0, 2, 3, 4, 20, 22};
-float T[6] = {0, 2, 3, 4, 6, 22};
+float T[6] = {0, 1, 1.5, 2, 3, 22};
 
 float V[6][3] = {{0, 0, 0},
                  {0, 0, 0},
@@ -63,13 +61,14 @@ float AC[6][3] = {{0, 0, 0},
                   {0, 0, 0},
                   {0, 0, 0}};
 
-float start[3] = {120, -40, 0};                 //0
-float temp_taget_Bana[3] = {PositionX,PositionY + 100.0 , 0};     //1
-float taget_Bana[3] = {PositionX, PositionY, 0};          //2
+float start[3] = {250, -20, 0};                 //0
+float temp_taget_Bana[3] = {Position_X,Position_Y + 150.0 , 0};     //1
+float taget_Bana[3] = {Position_X, Position_Y, 0};          //2
 
-float tranfer[3] = {PositionX,PositionY - 100.0 , 0};              //3
+float tranfer[3] = {Position_X,Position_Y - 150.0 , 0};              //3
 
-float temp_taget_Car[3] = {300, -100, 0};        //4
+float temp_taget_Car[3] = {250, -20, 0};        //4
+
 float taget_Car[3] = {650, 0, 0};             //5
 
 float q[6][3] = {{start[0], start[1], start[2]},
@@ -97,7 +96,7 @@ float a[6][1];
 float px2 = 0;
 float py2 = 0;
 
-bool isRunning = false;
+bool isRunning = true;
 float period_t = period_time;
 uint32_t periodTime = (uint32_t)(period_t * 1000000.0);
 
@@ -110,7 +109,7 @@ bool initi = false;
 bool inverseKinematics(float x, float y, float *theta1, float *theta2)
 {
   // Tính toán các giá trị trung gian
-  float c2 = (x * x + y * y - L1 * L1 - L2 * L2) / (2 * L1 * L2);
+  float c2 = (x * x + y * y - _L1 * _L1 - _L2 * _L2) / (2 * _L1 * _L2);
   float s2 = sqrt(1 - c2 * c2); // sin(theta2) có thể âm hoặc dương
 
   // Tính toán theta2 (có 2 nghiệm)
@@ -118,8 +117,8 @@ bool inverseKinematics(float x, float y, float *theta1, float *theta2)
   float theta2_2 = atan2(-s2, c2);
 
   // Tính toán theta1 cho mỗi nghiệm của theta2
-  float k1 = L1 + L2 * c2;
-  float k2 = L2 * s2;
+  float k1 = _L1 + _L2 * c2;
+  float k2 = _L2 * s2;
   float theta1_1 = atan2(y, x) - atan2(k2, k1);
   float theta1_2 = atan2(y, x) - atan2(-k2, k1);
 
@@ -160,9 +159,9 @@ void GoHome()
 {
   GotoHOME_1();
   GotoHOME_2();
-  Move_Rad(Motor_1, 2000, 0);
-  Move_Rad(Motor_2, 3600, 0);
-  delay(10000);
+  // Move_Rad(Motor_1, 2000, -1.4);
+  // Move_Rad(Motor_2, 3600, 2.5);
+  //delay(10000);
   Serial.print("Offset_1: ");
   Serial.print(Offset_1);
   Serial.print("   Offset_2: ");
@@ -174,10 +173,11 @@ void setup()
   pinMode(Limit_1, INPUT);
   pinMode(Limit_2, INPUT_PULLUP);
 
+  pinMode(Knift, OUTPUT);
+
   Serial.begin(9600);
   InitCan();
-
-  
+  //InitIbus();
 
   Serial.println("begin");
 }
@@ -204,11 +204,12 @@ void loop()
     Serial.println(periodTime);
     Serial.println("Finish");
   }
-  if ((ReceiveSerial() == true) && (digitalRead(B_Start)==0) && (isRunning==false))
-  {
-    digitalWrite(Led_Status_SERIAL,LOW);
-    isRunning=true;
-  }
+  //Move_basemode_auto_tranjectory();
+  // if ((ReceiveSerial() == true) && (digitalRead(B_Start)==0) && (isRunning==false))
+  // {
+  //   digitalWrite(Led_Status_SERIAL,LOW);
+  //   isRunning=true;
+  // }
 
   if (isRunning == true)
   {
@@ -225,7 +226,7 @@ void loop()
         SetKnift("OFF");
       }
     }
-    if (currentStep >= 3)
+    if (currentStep >= 4)
     {
       isRunning = false;
       Serial.println("FINISHED");
@@ -252,14 +253,14 @@ void loop()
     case 1:
       px2 = q[currentStep][0];
       py2 = q[currentStep][1];
-      q_J[currentStep][1] = acos((px2 * px2 + py2 * py2 - L1 * L1 - L2 * L2) / (2 * L1 * L2));
-      q_J[currentStep][0] = atan2((L1 + L2 * ((px2 * px2 + py2 * py2 - L1 * L1 - L2 * L2) / (2 * L1 * L2))) * py2 - L2 * sin(q_J[currentStep][1]) * px2, (L1 + L2 * ((px2 * px2 + py2 * py2 - L1 * L1 - L2 * L2) / (2 * L1 * L2))) * px2 + L2 * sin(q_J[currentStep][1]) * py2);
+      q_J[currentStep][1] = acos((px2 * px2 + py2 * py2 - _L1 * _L1 - _L2 * _L2) / (2 * _L1 * _L2));
+      q_J[currentStep][0] = atan2((_L1 + _L2 * ((px2 * px2 + py2 * py2 - _L1 * _L1 - _L2 * _L2) / (2 * _L1 * _L2))) * py2 - _L2 * sin(q_J[currentStep][1]) * px2, (_L1 + _L2 * ((px2 * px2 + py2 * py2 - _L1 * _L1 - _L2 * _L2) / (2 * _L1 * _L2))) * px2 + _L2 * sin(q_J[currentStep][1]) * py2);
       q_J[currentStep][2] = phi - q_J[currentStep][1] - q_J[currentStep][0];
 
       px2 = q[currentStep+1][0];
       py2 = q[currentStep+1][1];
-      q_J[currentStep+1][1] = acos((px2 * px2 + py2 * py2 - L1 * L1 - L2 * L2) / (2 * L1 * L2));
-      q_J[currentStep+1][0] = atan2((L1 + L2 * ((px2 * px2 + py2 * py2 - L1 * L1 - L2 * L2) / (2 * L1 * L2))) * py2 - L2 * sin(q_J[currentStep+1][1]) * px2, (L1 + L2 * ((px2 * px2 + py2 * py2 - L1 * L1 - L2 * L2) / (2 * L1 * L2))) * px2 + L2 * sin(q_J[currentStep+1][1]) * py2);
+      q_J[currentStep+1][1] = acos((px2 * px2 + py2 * py2 - _L1 * _L1 - _L2 * _L2) / (2 * _L1 * _L2));
+      q_J[currentStep+1][0] = atan2((_L1 + _L2 * ((px2 * px2 + py2 * py2 - _L1 * _L1 - _L2 * _L2) / (2 * _L1 * _L2))) * py2 - _L2 * sin(q_J[currentStep+1][1]) * px2, (_L1 + _L2 * ((px2 * px2 + py2 * py2 - _L1 * _L1 - _L2 * _L2) / (2 * _L1 * _L2))) * px2 + _L2 * sin(q_J[currentStep+1][1]) * py2);
       q_J[currentStep+1][2] = phi - q_J[currentStep+1][1] - q_J[currentStep+1][0];
       
       q0 = q_J[currentStep][0];
@@ -386,20 +387,20 @@ void loop()
     phi = atan2(qd_Y, qd_X);
     px2 = qd_X - L3 * cos(phi);
     py2 = qd_Y - L3 * sin(phi);
-    // float c2 = ((px2*px2 + py2*py2 - L1*L1 - L2*L2)/(2*L1*L2));
-    theta2 = acos((px2 * px2 + py2 * py2 - L1 * L1 - L2 * L2) / (2 * L1 * L2));
+    // float c2 = ((px2*px2 + py2*py2 - _L1*_L1 - _L2*_L2)/(2*_L1*_L2));
+    theta2 = acos((px2 * px2 + py2 * py2 - _L1 * _L1 - _L2 * _L2) / (2 * _L1 * _L2));
 
-    // float c1 = ((L1 + L2*cos(theta2))*px2 + L2*sin(theta2)*py2)/(px2*px2 +py2*py2);
-    theta1 = atan2((L1 + L2 * ((px2 * px2 + py2 * py2 - L1 * L1 - L2 * L2) / (2 * L1 * L2))) * py2 - L2 * sin(theta2) * px2, (L1 + L2 * ((px2 * px2 + py2 * py2 - L1 * L1 - L2 * L2) / (2 * L1 * L2))) * px2 + L2 * sin(theta2) * py2);
+    // float c1 = ((_L1 + _L2*cos(theta2))*px2 + _L2*sin(theta2)*py2)/(px2*px2 +py2*py2);
+    theta1 = atan2((_L1 + _L2 * ((px2 * px2 + py2 * py2 - _L1 * _L1 - _L2 * _L2) / (2 * _L1 * _L2))) * py2 - _L2 * sin(theta2) * px2, (_L1 + _L2 * ((px2 * px2 + py2 * py2 - _L1 * _L1 - _L2 * _L2) / (2 * _L1 * _L2))) * px2 + _L2 * sin(theta2) * py2);
     theta3 = phi - theta1 - theta2;
     float x_dot[3] = {vd_X, vd_Y, vd_Z};
 
     float J[3][3] = {
-        {-L1 * sin(theta1) - L2 * sin(theta1 + theta2) - L3 * sin(theta1 + theta2 + theta3),
-         -L2 * sin(theta1 + theta2) - L3 * sin(theta1 + theta2 + theta3),
+        {-_L1 * sin(theta1) - _L2 * sin(theta1 + theta2) - L3 * sin(theta1 + theta2 + theta3),
+         -_L2 * sin(theta1 + theta2) - L3 * sin(theta1 + theta2 + theta3),
          -L3 * sin(theta1 + theta2 + theta3)},
-        {L1 * cos(theta1) + L2 * cos(theta1 + theta2) + L3 * cos(theta1 + theta2 + theta3),
-         L2 * cos(theta1 + theta2) + L3 * cos(theta1 + theta2 + theta3),
+        {_L1 * cos(theta1) + _L2 * cos(theta1 + theta2) + L3 * cos(theta1 + theta2 + theta3),
+         _L2 * cos(theta1 + theta2) + L3 * cos(theta1 + theta2 + theta3),
          L3 * cos(theta1 + theta2 + theta3)},
         {0, 0, 1}};
     float J_inv[3][3];
@@ -407,13 +408,13 @@ void loop()
     float theta_dot[3] = {0, 0, 0}; // Ma trận vận tốc góc
     calculateAngularVelocity(J_inv, x_dot, theta_dot);
     // velocity theta1
-    // w1 = ((cos(theta1 + theta2) / (L1 * sin(theta2))) * vd_X + (sin(theta1 + theta2) / (L1 * sin(theta2))) * vd_X + ((L3 * sin(theta3)) / (L1 * sin(theta2))) * vd_X);
+    // w1 = ((cos(theta1 + theta2) / (_L1 * sin(theta2))) * vd_X + (sin(theta1 + theta2) / (_L1 * sin(theta2))) * vd_X + ((L3 * sin(theta3)) / (_L1 * sin(theta2))) * vd_X);
 
     // speed1 = (uint16_t)((w1 * 60 * 1600) / (2 * 3.1415));
     // speed1=rad_s_to_dps_LSB(theta_dot[0]);
     speed1 = theta_dot[0] * 5500.39;
     //  velocity theta2
-    // w2 = ((-(L2 * cos(theta1 + theta2) + L1 * cos(theta1)) / (L1 * L2 * sin(theta2))) * vd_Y + (-(L2 * sin(theta1 + theta2) + L1 * sin(theta1)) / (L1 * L2 * sin(theta2))) * vd_Y + (-(L3 * (L1 * sin(theta2 + theta3) + L2 * sin(theta3))) / (L1 * L2 * sin(theta2))) * vd_Y);
+    // w2 = ((-(_L2 * cos(theta1 + theta2) + _L1 * cos(theta1)) / (_L1 * _L2 * sin(theta2))) * vd_Y + (-(_L2 * sin(theta1 + theta2) + _L1 * sin(theta1)) / (_L1 * _L2 * sin(theta2))) * vd_Y + (-(L3 * (_L1 * sin(theta2 + theta3) + _L2 * sin(theta3))) / (_L1 * _L2 * sin(theta2))) * vd_Y);
     // speed2 = (uint16_t)((w2 * 60 * 1600) / (2 * 3.1415));
     // speed2 =rad_s_to_dps_LSB(theta_dot[1]);
     speed2 = theta_dot[1] * 5042.03;
@@ -450,6 +451,7 @@ void loop()
     if (t == 0)
     {
       previousPulse_2 = GetEconder(Motor_2);
+
     }
     int32_t currentPulse_2 = TransferAngle2Pulse(Motor_2, theta2);
     // int32_t currentPulse_2 = TransferAngle2Pulse(Motor_2,theta2);

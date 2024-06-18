@@ -2,7 +2,8 @@
 #include "constants.h"
 
 const int MAX_DATA_LENGTH = 10; // Kích thước tối đa của dữ liệu nhận được
-
+float Position_X = 500;
+float Position_Y =-50;
 bool ReceiveSerial()
 {
     float nums[3];
@@ -23,9 +24,9 @@ bool ReceiveSerial()
             index++;
         }
     }
-    float PositionX = nums[2];
-    float PositionY = nums[1];
-    if ((PositionX >= MinX) && (PositionX <= MaxX) && (PositionY <= MaxY) && (PositionY <= MaxY))
+    Position_X = nums[2]-100;
+    Position_Y = nums[1];
+    if ((Position_X >= MinX) && (Position_X <= MaxX) && (Position_Y <= MaxY) && (Position_Y <= MaxY))
         return true;
     else
         return false;
